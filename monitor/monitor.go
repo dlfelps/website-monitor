@@ -46,8 +46,8 @@ func (m *Monitor) AddWebsite(url, name string) *Website {
             }
         }
         
-        // Create thumbnail URL using the website's favicon
-        thumbnailURL := "https://www.google.com/s2/favicons?domain=" + domainURL + "&sz=64"
+        // Create thumbnail URL using DuckDuckGo's favicon service which is more reliable
+        thumbnailURL := "https://icons.duckduckgo.com/ip3/" + strings.TrimPrefix(strings.TrimPrefix(domainURL, "https://"), "http://") + ".ico"
         
         website := &Website{
                 ID:             m.idCounter,
