@@ -6,6 +6,7 @@ import (
         "io"
         "log"
         "net/http"
+        "strings"
         "sync"
         "time"
 )
@@ -34,8 +35,19 @@ func (m *Monitor) AddWebsite(url, name string) *Website {
         m.mu.Lock()
         defer m.mu.Unlock()
 
-        // Create thumbnail URL using a screenshot service
-        thumbnailURL := "https://api.screenshotmachine.com/?key=screenshot&url=" + url + "&dimension=600x400&format=png&delay=1000"
+        // Extract domain from URL for favicon
+        domainURL := url
+        
+        // Simple domain extraction
+        if strings.HasPrefix(domainURL, "http://") || strings.HasPrefix(domainURL, "https://") {
+            parts := strings.Split(domainURL, "/")
+            if len(parts) >= 3 {
+                domainURL = parts[0] + "//" + parts[2]
+            }
+        }
+        
+        // Create thumbnail URL using the website's favicon
+        thumbnailURL := "https://www.google.com/s2/favicons?domain=" + domainURL + "&sz=64"
         
         website := &Website{
                 ID:             m.idCounter,
