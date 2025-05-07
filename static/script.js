@@ -59,11 +59,6 @@ document.addEventListener('DOMContentLoaded', function() {
             itemClone.querySelector('.website-name').textContent = website.name;
             itemClone.querySelector('.website-url').textContent = website.url;
             
-            // Set thumbnail image
-            if (website.thumbnailURL) {
-                itemClone.querySelector('.thumbnail-img').src = website.thumbnailURL;
-            }
-            
             const lastCheckedSpan = itemClone.querySelector('.website-last-checked span');
             if (website.lastChecked && new Date(website.lastChecked).getTime() > 0) {
                 lastCheckedSpan.textContent = formatDate(new Date(website.lastChecked));

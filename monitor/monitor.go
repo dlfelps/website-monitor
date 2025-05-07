@@ -6,7 +6,6 @@ import (
         "io"
         "log"
         "net/http"
-        "strings"
         "sync"
         "time"
 )
@@ -35,20 +34,6 @@ func (m *Monitor) AddWebsite(url, name string) *Website {
         m.mu.Lock()
         defer m.mu.Unlock()
 
-        // Extract domain from URL for favicon
-        domainURL := url
-        
-        // Simple domain extraction
-        if strings.HasPrefix(domainURL, "http://") || strings.HasPrefix(domainURL, "https://") {
-            parts := strings.Split(domainURL, "/")
-            if len(parts) >= 3 {
-                domainURL = parts[0] + "//" + parts[2]
-            }
-        }
-        
-        // Create thumbnail URL using DuckDuckGo's favicon service which is more reliable
-        thumbnailURL := "https://icons.duckduckgo.com/ip3/" + strings.TrimPrefix(strings.TrimPrefix(domainURL, "https://"), "http://") + ".ico"
-        
         website := &Website{
                 ID:             m.idCounter,
                 URL:            url,
@@ -59,7 +44,6 @@ func (m *Monitor) AddWebsite(url, name string) *Website {
                 IsFirstCheck:   true,
                 LastStatusCode: 0,
                 Error:          "",
-                ThumbnailURL:   thumbnailURL,
         }
 
         m.websites = append(m.websites, website)
