@@ -1,6 +1,7 @@
 package handlers
 
 import (
+        "embed"
         "encoding/json"
         "fmt"
         "html/template"
@@ -8,6 +9,7 @@ import (
         "log"
         "net/http"
         "os"
+        "path/filepath"
         "strconv"
         "time"
 
@@ -25,6 +27,17 @@ type Handlers struct {
 // NewHandlers creates a new Handlers instance
 func NewHandlers(monitor *monitor.Monitor, deleteFunc func(int) error) *Handlers {
         tmpl := template.Must(template.ParseFiles("templates/index.html"))
+        return &Handlers{
+                Monitor:      monitor,
+                tmpl:         tmpl,
+                deleteFromDB: deleteFunc,
+        }
+}
+
+// NewHandlersWithEmbeddedTemplates creates a new Handlers instance with embedded templates
+func NewHandlersWithEmbeddedTemplates(monitor *monitor.Monitor, deleteFunc func(int) error, templatesFS embed.FS) *Handlers {
+        // Parse templates from embedded filesystem
+        tmpl := template.Must(template.ParseFS(templatesFS, "templates/index.html"))
         return &Handlers{
                 Monitor:      monitor,
                 tmpl:         tmpl,
@@ -188,17 +201,21 @@ func (h *Handlers) UploadCertificate(w http.ResponseWriter, r *http.Request) {
                 return
         }
         
+        // Get the current executable directory or use a default location
+        certsDir := "./certs"
+        
         // Create a directory for certificates if it doesn't exist
-        err = os.MkdirAll("./certs", 0755)
+        err = os.MkdirAll(certsDir, 0755)
         if err != nil {
-                http.Error(w, "Failed to create certs directory: "+err.Error(), http.StatusInternalServerError)
-                return
+                log.Printf("Failed to create certs directory: %v", err)
+                // Fall back to current directory if we can't create the certs directory
+                certsDir = "."
         }
         
         // Create a unique filename based on current timestamp and original filename
         timestamp := time.Now().Unix()
         uniqueFilename := fmt.Sprintf("%d_%s", timestamp, header.Filename)
-        filePath := fmt.Sprintf("./certs/%s", uniqueFilename)
+        filePath := filepath.Join(certsDir, uniqueFilename)
         
         // Save the file
         err = os.WriteFile(filePath, fileBytes, 0644)

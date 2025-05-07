@@ -1,6 +1,8 @@
 package main
 
 import (
+        "embed"
+        "io/fs"
         "log"
         "net/http"
         "time"
@@ -10,6 +12,12 @@ import (
         "website-monitor/monitor"
         "github.com/gorilla/mux"
 )
+
+//go:embed templates
+var templatesFS embed.FS
+
+//go:embed static
+var staticFS embed.FS
 
 func main() {
         // Initialize the database
@@ -54,8 +62,8 @@ func main() {
                 return db.DeleteWebsite(id)
         }
 
-        // Create handlers with the monitor and delete function
-        h := handlers.NewHandlers(websiteMonitor, deleteWebsite)
+        // Create handlers with the monitor and delete function using embedded templates
+        h := handlers.NewHandlersWithEmbeddedTemplates(websiteMonitor, deleteWebsite, templatesFS)
 
         // API routes
         r.HandleFunc("/api/websites", h.GetWebsites).Methods("GET")
@@ -67,8 +75,12 @@ func main() {
         // HTML routes
         r.HandleFunc("/", h.Dashboard).Methods("GET")
 
-        // Serve static files
-        r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
+        // Serve static files from embedded FS
+        staticSubFS, err := fs.Sub(staticFS, "static")
+        if err != nil {
+                log.Fatalf("Failed to get static sub filesystem: %v", err)
+        }
+        r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.FS(staticSubFS))))
 
         // Start the server
         log.Println("Starting server on :5000...")
