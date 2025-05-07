@@ -101,6 +101,32 @@ button:hover {
     border: 1px solid var(--border-color);
 }
 
+.file-input-container {
+    display: flex;
+    align-items: center;
+}
+
+.file-input-container input[type="text"] {
+    flex: 1;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.file-button {
+    padding: 10px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    background-color: #7f8c8d;
+}
+
+.file-button:hover {
+    background-color: #636e72;
+}
+
+.file-input {
+    display: none;
+}
+
 /* Dashboard styles */
 .dashboard {
     background-color: var(--card-background);

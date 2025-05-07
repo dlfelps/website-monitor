@@ -156,3 +156,58 @@ func (h *Handlers) CheckWebsite(w http.ResponseWriter, r *http.Request) {
         w.Header().Set("Content-Type", "application/json")
         json.NewEncoder(w).Encode(website)
 }
+
+// UploadCertificate handles certificate file uploads
+func (h *Handlers) UploadCertificate(w http.ResponseWriter, r *http.Request) {
+        // Limit file size to 5MB
+        r.ParseMultipartForm(5 << 20)
+        
+        // Get the certificate type (client, key, or CA)
+        certType := r.FormValue("type")
+        if certType == "" {
+                http.Error(w, "Certificate type is required", http.StatusBadRequest)
+                return
+        }
+        
+        // Get the file from form data
+        file, header, err := r.FormFile("file")
+        if err != nil {
+                http.Error(w, "Failed to get file: "+err.Error(), http.StatusBadRequest)
+                return
+        }
+        defer file.Close()
+        
+        // Create path for the certificate file
+        // For security, we'll create a dedicated certs directory in a real implementation
+        // Here we just use the filename for demonstration
+        filename := header.Filename
+        
+        // In a real implementation, you would save the file to disk:
+        /*
+        fileBytes, err := io.ReadAll(file)
+        if err != nil {
+                http.Error(w, "Failed to read file: "+err.Error(), http.StatusInternalServerError)
+                return
+        }
+        
+        // Create a directory for certificates if it doesn't exist
+        os.MkdirAll("./certs", 0755)
+        
+        // Save the file
+        filePath := fmt.Sprintf("./certs/%s", filename)
+        err = os.WriteFile(filePath, fileBytes, 0644)
+        if err != nil {
+                http.Error(w, "Failed to save file: "+err.Error(), http.StatusInternalServerError)
+                return
+        }
+        */
+        
+        // For now, we'll just return the filename to be used as the path
+        response := map[string]string{
+                "filePath": filename,
+                "type":     certType,
+        }
+        
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(response)
+}

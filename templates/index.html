@@ -32,15 +32,27 @@
                 <div class="pki-options" style="display: none;">
                     <div class="form-group">
                         <label for="clientCertPath">Client Certificate Path:</label>
-                        <input type="text" id="clientCertPath" name="clientCertPath" placeholder="/path/to/certificate.pem">
+                        <div class="file-input-container">
+                            <input type="text" id="clientCertPath" name="clientCertPath" placeholder="/path/to/certificate.pem">
+                            <input type="file" id="clientCertFile" class="file-input" accept=".pem,.crt,.cert">
+                            <button type="button" class="file-button" id="clientCertButton">Browse...</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="clientKeyPath">Client Key Path:</label>
-                        <input type="text" id="clientKeyPath" name="clientKeyPath" placeholder="/path/to/key.pem">
+                        <div class="file-input-container">
+                            <input type="text" id="clientKeyPath" name="clientKeyPath" placeholder="/path/to/key.pem">
+                            <input type="file" id="clientKeyFile" class="file-input" accept=".pem,.key">
+                            <button type="button" class="file-button" id="clientKeyButton">Browse...</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="customRootCAPath">Custom Root CA Path (optional):</label>
-                        <input type="text" id="customRootCAPath" name="customRootCAPath" placeholder="/path/to/ca.pem">
+                        <div class="file-input-container">
+                            <input type="text" id="customRootCAPath" name="customRootCAPath" placeholder="/path/to/ca.pem">
+                            <input type="file" id="customRootCAFile" class="file-input" accept=".pem,.crt,.cert">
+                            <button type="button" class="file-button" id="customRootCAButton">Browse...</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="skipTLSVerify">Skip TLS Verification (insecure):</label>

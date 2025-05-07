@@ -62,6 +62,7 @@ func main() {
         r.HandleFunc("/api/websites", h.AddWebsite).Methods("POST")
         r.HandleFunc("/api/websites/{id}", h.RemoveWebsite).Methods("DELETE")
         r.HandleFunc("/api/websites/{id}/check", h.CheckWebsite).Methods("POST")
+        r.HandleFunc("/api/upload-certificate", h.UploadCertificate).Methods("POST")
 
         // HTML routes
         r.HandleFunc("/", h.Dashboard).Methods("GET")

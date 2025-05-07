@@ -21,17 +21,72 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(loadWebsites, 60000); // Refresh every minute
     
     // Event listeners
-    addWebsiteForm.addEventListener('submit', handleAddWebsite);
-    checkAllBtn.addEventListener('click', handleCheckAll);
+    if (addWebsiteForm) {
+        addWebsiteForm.addEventListener('submit', handleAddWebsite);
+    }
+    
+    if (checkAllBtn) {
+        checkAllBtn.addEventListener('click', handleCheckAll);
+    }
     
     // Show/hide PKI options based on checkbox
-    usePKI.addEventListener('change', function() {
-        if (this.checked) {
-            pkiOptionsDiv.style.display = 'block';
-        } else {
-            pkiOptionsDiv.style.display = 'none';
+    if (usePKI && pkiOptionsDiv) {
+        usePKI.addEventListener('change', function() {
+            if (this.checked) {
+                pkiOptionsDiv.style.display = 'block';
+            } else {
+                pkiOptionsDiv.style.display = 'none';
+            }
+        });
+    }
+    
+    // Set up file browser buttons
+    setupFileBrowser('clientCert');
+    setupFileBrowser('clientKey');
+    setupFileBrowser('customRootCA');
+    
+    // Function to set up file browser buttons
+    function setupFileBrowser(prefix) {
+        const pathInput = document.getElementById(prefix + 'Path');
+        const fileInput = document.getElementById(prefix + 'File');
+        const browseButton = document.getElementById(prefix + 'Button');
+        
+        if (pathInput && fileInput && browseButton) {
+            // When the browse button is clicked, trigger the file input
+            browseButton.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // When a file is selected, update the path input
+            fileInput.addEventListener('change', function() {
+                if (this.files && this.files.length > 0) {
+                    // Set the path to the filename
+                    pathInput.value = this.files[0].name;
+                    
+                    // Optional: You could upload the file to the server here
+                    // and then update the path to where it was saved
+                    const formData = new FormData();
+                    formData.append('file', this.files[0]);
+                    
+                    // Example upload code (commented out for now)
+                    /*
+                    fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        pathInput.value = data.filePath;
+                    })
+                    .catch(error => {
+                        console.error('Error uploading file:', error);
+                        showError('Failed to upload file. Please try again.');
+                    });
+                    */
+                }
+            });
         }
-    });
+    }
     
     // Functions
     async function loadWebsites() {
@@ -133,8 +188,10 @@ document.addEventListener('DOMContentLoaded', function() {
     async function handleAddWebsite(event) {
         event.preventDefault();
         
+        if (!websiteUrl) return;
+        
         const url = websiteUrl.value.trim();
-        let name = websiteName.value.trim();
+        let name = websiteName ? websiteName.value.trim() : url;
         
         // Validate URL
         if (!url) {
@@ -151,15 +208,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const requestData = {
             url,
             name,
-            usePKI: usePKI.checked
+            usePKI: usePKI && usePKI.checked
         };
         
         // Add PKI fields if PKI is enabled
-        if (usePKI.checked) {
-            requestData.clientCertPath = clientCertPath.value.trim();
-            requestData.clientKeyPath = clientKeyPath.value.trim();
-            requestData.customRootCAPath = customRootCAPath.value.trim();
-            requestData.skipTLSVerify = skipTLSVerify.checked;
+        if (usePKI && usePKI.checked) {
+            if (clientCertPath) requestData.clientCertPath = clientCertPath.value.trim();
+            if (clientKeyPath) requestData.clientKeyPath = clientKeyPath.value.trim();
+            if (customRootCAPath) requestData.customRootCAPath = customRootCAPath.value.trim();
+            if (skipTLSVerify) requestData.skipTLSVerify = skipTLSVerify.checked;
             
             // Validate required certificate fields if they're provided
             if ((requestData.clientCertPath && !requestData.clientKeyPath) || 
@@ -183,8 +240,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Reset form
-            addWebsiteForm.reset();
-            pkiOptionsDiv.style.display = 'none';
+            if (addWebsiteForm) {
+                addWebsiteForm.reset();
+                if (pkiOptionsDiv) pkiOptionsDiv.style.display = 'none';
+            }
             
             // Reload websites
             loadWebsites();
