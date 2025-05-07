@@ -2,10 +2,14 @@ package monitor
 
 import (
         "crypto/md5"
+        "crypto/tls"
+        "crypto/x509"
         "encoding/hex"
+        "fmt"
         "io"
         "log"
         "net/http"
+        "os"
         "sync"
         "time"
 )
@@ -33,19 +37,29 @@ func NewMonitor(saveFunction func(*Website)) *Monitor {
 
 // AddWebsite adds a new website to monitor
 func (m *Monitor) AddWebsite(url, name string) *Website {
+        return m.AddWebsiteWithPKI(url, name, false, "", "", false, "")
+}
+
+// AddWebsiteWithPKI adds a new website with PKI configuration to monitor
+func (m *Monitor) AddWebsiteWithPKI(url, name string, usePKI bool, clientCertPath, clientKeyPath string, skipTLSVerify bool, customRootCAPath string) *Website {
         m.mu.Lock()
         defer m.mu.Unlock()
 
         website := &Website{
-                ID:             m.idCounter,
-                URL:            url,
-                Name:           name,
-                LastChecked:    time.Time{},
-                LastHash:       "",
-                HasChanged:     false,
-                IsFirstCheck:   true,
-                LastStatusCode: 0,
-                Error:          "",
+                ID:               m.idCounter,
+                URL:              url,
+                Name:             name,
+                LastChecked:      time.Time{},
+                LastHash:         "",
+                HasChanged:       false,
+                IsFirstCheck:     true,
+                LastStatusCode:   0,
+                Error:            "",
+                UsePKI:           usePKI,
+                ClientCertPath:   clientCertPath,
+                ClientKeyPath:    clientKeyPath,
+                SkipTLSVerify:    skipTLSVerify,
+                CustomRootCAPath: customRootCAPath,
         }
 
         m.websites = append(m.websites, website)
@@ -110,7 +124,32 @@ func (m *Monitor) GetWebsiteByID(id int) *Website {
 func (m *Monitor) CheckWebsite(website *Website) {
         log.Printf("Checking website: %s (%s)", website.Name, website.URL)
 
-        resp, err := m.client.Get(website.URL)
+        var resp *http.Response
+        var err error
+
+        if website.UsePKI {
+                // Configure TLS for this specific website
+                client, err := createClientWithPKI(website)
+                if err != nil {
+                        m.mu.Lock()
+                        website.LastChecked = time.Now()
+                        website.Error = "PKI configuration error: " + err.Error()
+                        website.LastStatusCode = 0
+                        website.HasChanged = false
+                        if m.saveFunc != nil {
+                                m.saveFunc(website)
+                        }
+                        m.mu.Unlock()
+                        log.Printf("PKI configuration error for %s: %v", website.URL, err)
+                        return
+                }
+                
+                // Use the custom client to make the request
+                resp, err = client.Get(website.URL)
+        } else {
+                // Use the default client for non-PKI websites
+                resp, err = m.client.Get(website.URL)
+        }
         
         m.mu.Lock()
         defer m.mu.Unlock()
@@ -167,6 +206,51 @@ func (m *Monitor) CheckWebsite(website *Website) {
         }
         
         log.Printf("Check completed for %s - Changed: %v", website.URL, website.HasChanged)
+}
+
+// createClientWithPKI creates an HTTP client with PKI authentication for a specific website
+func createClientWithPKI(website *Website) (*http.Client, error) {
+        // Start with default TLS config
+        tlsConfig := &tls.Config{
+                MinVersion: tls.VersionTLS12,
+        }
+        
+        // Load client certificate if specified
+        if website.ClientCertPath != "" && website.ClientKeyPath != "" {
+                cert, err := tls.LoadX509KeyPair(website.ClientCertPath, website.ClientKeyPath)
+                if err != nil {
+                        return nil, err
+                }
+                tlsConfig.Certificates = []tls.Certificate{cert}
+        }
+        
+        // Configure custom root CA if specified
+        if website.CustomRootCAPath != "" {
+                caCert, err := os.ReadFile(website.CustomRootCAPath)
+                if err != nil {
+                        return nil, err
+                }
+                
+                caCertPool := x509.NewCertPool()
+                if !caCertPool.AppendCertsFromPEM(caCert) {
+                        return nil, fmt.Errorf("failed to append CA certificate")
+                }
+                
+                tlsConfig.RootCAs = caCertPool
+        }
+        
+        // Configure insecure TLS verification if specified
+        if website.SkipTLSVerify {
+                tlsConfig.InsecureSkipVerify = true
+        }
+        
+        // Create and return a custom HTTP client with the configured TLS
+        return &http.Client{
+                Timeout: 30 * time.Second,
+                Transport: &http.Transport{
+                        TLSClientConfig: tlsConfig,
+                },
+        }, nil
 }
 
 // CheckAllWebsites checks all monitored websites for changes

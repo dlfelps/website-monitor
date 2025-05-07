@@ -44,8 +44,13 @@ func (h *Handlers) GetWebsites(w http.ResponseWriter, r *http.Request) {
 // AddWebsite adds a new website to monitor
 func (h *Handlers) AddWebsite(w http.ResponseWriter, r *http.Request) {
         var data struct {
-                URL  string `json:"url"`
-                Name string `json:"name"`
+                URL             string `json:"url"`
+                Name            string `json:"name"`
+                UsePKI          bool   `json:"usePKI"`
+                ClientCertPath  string `json:"clientCertPath"`
+                ClientKeyPath   string `json:"clientKeyPath"`
+                SkipTLSVerify   bool   `json:"skipTLSVerify"`
+                CustomRootCAPath string `json:"customRootCAPath"`
         }
 
         // Parse the request body
@@ -66,8 +71,32 @@ func (h *Handlers) AddWebsite(w http.ResponseWriter, r *http.Request) {
                 data.Name = data.URL
         }
 
-        // Add the website to the monitor
-        website := h.Monitor.AddWebsite(data.URL, data.Name)
+        // Check for client certificate if PKI is enabled
+        if data.UsePKI && data.ClientCertPath != "" && data.ClientKeyPath == "" {
+                http.Error(w, "Client key path is required when client certificate is provided", http.StatusBadRequest)
+                return
+        }
+
+        if data.UsePKI && data.ClientKeyPath != "" && data.ClientCertPath == "" {
+                http.Error(w, "Client certificate path is required when client key is provided", http.StatusBadRequest)
+                return
+        }
+
+        // Add the website to the monitor with PKI configuration if needed
+        var website *monitor.Website
+        if data.UsePKI {
+                website = h.Monitor.AddWebsiteWithPKI(
+                        data.URL, 
+                        data.Name, 
+                        data.UsePKI, 
+                        data.ClientCertPath, 
+                        data.ClientKeyPath, 
+                        data.SkipTLSVerify, 
+                        data.CustomRootCAPath,
+                )
+        } else {
+                website = h.Monitor.AddWebsite(data.URL, data.Name)
+        }
 
         // Return the new website as JSON
         w.Header().Set("Content-Type", "application/json")
