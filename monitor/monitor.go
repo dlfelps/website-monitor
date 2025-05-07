@@ -16,16 +16,18 @@ type Monitor struct {
         mu        sync.RWMutex
         client    *http.Client
         idCounter int
+        saveFunc  func(*Website) // Function to save website changes to database
 }
 
 // NewMonitor creates a new website monitor instance
-func NewMonitor() *Monitor {
+func NewMonitor(saveFunction func(*Website)) *Monitor {
         return &Monitor{
                 websites: []*Website{},
                 client: &http.Client{
                         Timeout: 30 * time.Second,
                 },
                 idCounter: 1,
+                saveFunc: saveFunction,
         }
 }
 
@@ -49,6 +51,11 @@ func (m *Monitor) AddWebsite(url, name string) *Website {
         m.websites = append(m.websites, website)
         m.idCounter++
 
+        // Save website to database if save function is provided
+        if m.saveFunc != nil {
+                m.saveFunc(website)
+        }
+
         // Immediately check the website
         go m.CheckWebsite(website)
 
@@ -64,6 +71,10 @@ func (m *Monitor) RemoveWebsite(id int) bool {
                 if website.ID == id {
                         // Remove the website from the slice
                         m.websites = append(m.websites[:i], m.websites[i+1:]...)
+                        
+                        // This function doesn't use website.saveFunc because
+                        // we can't access individual websites once they're deleted,
+                        // so this is handled externally in the handlers package
                         return true
                 }
         }
@@ -150,6 +161,11 @@ func (m *Monitor) CheckWebsite(website *Website) {
         website.LastHash = currentHash
         website.Error = ""
         
+        // Save website to database if save function is provided
+        if m.saveFunc != nil {
+                m.saveFunc(website)
+        }
+        
         log.Printf("Check completed for %s - Changed: %v", website.URL, website.HasChanged)
 }
 
@@ -168,4 +184,20 @@ func (m *Monitor) CheckAllWebsites() {
 
         wg.Wait()
         log.Printf("Completed checking all %d websites", len(websites))
+}
+
+// AddExistingWebsite adds a website that was loaded from the database
+func (m *Monitor) AddExistingWebsite(website *Website) {
+        m.mu.Lock()
+        defer m.mu.Unlock()
+
+        m.websites = append(m.websites, website)
+}
+
+// SetIDCounter sets the ID counter for new websites
+func (m *Monitor) SetIDCounter(id int) {
+        m.mu.Lock()
+        defer m.mu.Unlock()
+        
+        m.idCounter = id
 }

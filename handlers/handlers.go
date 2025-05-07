@@ -3,6 +3,7 @@ package handlers
 import (
         "encoding/json"
         "html/template"
+        "log"
         "net/http"
         "strconv"
 
@@ -12,16 +13,18 @@ import (
 
 // Handlers contains the HTTP handlers for the application
 type Handlers struct {
-        Monitor *monitor.Monitor
-        tmpl    *template.Template
+        Monitor       *monitor.Monitor
+        tmpl          *template.Template
+        deleteFromDB  func(int) error // Function to delete website from database
 }
 
 // NewHandlers creates a new Handlers instance
-func NewHandlers(monitor *monitor.Monitor) *Handlers {
+func NewHandlers(monitor *monitor.Monitor, deleteFunc func(int) error) *Handlers {
         tmpl := template.Must(template.ParseFiles("templates/index.html"))
         return &Handlers{
-                Monitor: monitor,
-                tmpl:    tmpl,
+                Monitor:      monitor,
+                tmpl:         tmpl,
+                deleteFromDB: deleteFunc,
         }
 }
 
@@ -81,11 +84,20 @@ func (h *Handlers) RemoveWebsite(w http.ResponseWriter, r *http.Request) {
                 return
         }
 
-        // Try to remove the website
+        // Try to remove the website from memory
         success := h.Monitor.RemoveWebsite(id)
         if !success {
                 http.Error(w, "Website not found", http.StatusNotFound)
                 return
+        }
+
+        // Delete from database if delete function is provided
+        if h.deleteFromDB != nil {
+                if err := h.deleteFromDB(id); err != nil {
+                        // Log the error but don't fail the request since the website 
+                        // is already removed from memory
+                        log.Printf("Error deleting website %d from database: %v", id, err)
+                }
         }
 
         // Return success
