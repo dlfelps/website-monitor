@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Change Monitor</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Website Change Monitor</h1>
+        </header>
+        
+        <section class="add-website-form">
+            <h2>Add a Website to Monitor</h2>
+            <form id="addWebsiteForm">
+                <div class="form-group">
+                    <label for="websiteUrl">URL:</label>
+                    <input type="url" id="websiteUrl" name="url" placeholder="https://example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="websiteName">Name (optional):</label>
+                    <input type="text" id="websiteName" name="name" placeholder="My Website">
+                </div>
+                <button type="submit">Add Website</button>
+            </form>
+        </section>
+
+        <section class="dashboard">
+            <div class="dashboard-header">
+                <h2>Monitored Websites</h2>
+                <button id="checkAllBtn" class="check-all-btn">Check All Now</button>
+            </div>
+            
+            <div class="websites-container">
+                <div id="changedWebsites" class="website-list">
+                    <h3>Changed Websites</h3>
+                    <div class="websites-list-items" id="changedWebsitesList">
+                        <!-- Changed websites will be inserted here -->
+                        <div class="empty-message">No changed websites found</div>
+                    </div>
+                </div>
+                
+                <div id="unchangedWebsites" class="website-list">
+                    <h3>Unchanged Websites</h3>
+                    <div class="websites-list-items" id="unchangedWebsitesList">
+                        <!-- Unchanged websites will be inserted here -->
+                        <div class="empty-message">No unchanged websites found</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <template id="websiteItemTemplate">
+        <div class="website-item">
+            <div class="website-item-content">
+                <h4 class="website-name"></h4>
+                <p class="website-url"></p>
+                <p class="website-last-checked">Last checked: <span></span></p>
+                <p class="website-status"></p>
+            </div>
+            <div class="website-item-actions">
+                <button class="check-now-btn">Check Now</button>
+                <button class="visit-btn">Visit</button>
+                <button class="remove-btn">Remove</button>
+            </div>
+        </div>
+    </template>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
