@@ -2,10 +2,14 @@ package handlers
 
 import (
         "encoding/json"
+        "fmt"
         "html/template"
+        "io"
         "log"
         "net/http"
+        "os"
         "strconv"
+        "time"
 
         "website-monitor/monitor"
         "github.com/gorilla/mux"
@@ -177,13 +181,7 @@ func (h *Handlers) UploadCertificate(w http.ResponseWriter, r *http.Request) {
         }
         defer file.Close()
         
-        // Create path for the certificate file
-        // For security, we'll create a dedicated certs directory in a real implementation
-        // Here we just use the filename for demonstration
-        filename := header.Filename
-        
-        // In a real implementation, you would save the file to disk:
-        /*
+        // Read the file content
         fileBytes, err := io.ReadAll(file)
         if err != nil {
                 http.Error(w, "Failed to read file: "+err.Error(), http.StatusInternalServerError)
@@ -191,20 +189,28 @@ func (h *Handlers) UploadCertificate(w http.ResponseWriter, r *http.Request) {
         }
         
         // Create a directory for certificates if it doesn't exist
-        os.MkdirAll("./certs", 0755)
+        err = os.MkdirAll("./certs", 0755)
+        if err != nil {
+                http.Error(w, "Failed to create certs directory: "+err.Error(), http.StatusInternalServerError)
+                return
+        }
+        
+        // Create a unique filename based on current timestamp and original filename
+        timestamp := time.Now().Unix()
+        uniqueFilename := fmt.Sprintf("%d_%s", timestamp, header.Filename)
+        filePath := fmt.Sprintf("./certs/%s", uniqueFilename)
         
         // Save the file
-        filePath := fmt.Sprintf("./certs/%s", filename)
         err = os.WriteFile(filePath, fileBytes, 0644)
         if err != nil {
                 http.Error(w, "Failed to save file: "+err.Error(), http.StatusInternalServerError)
                 return
         }
-        */
         
-        // For now, we'll just return the filename to be used as the path
+        log.Printf("Certificate file saved: %s", filePath)
+        
         response := map[string]string{
-                "filePath": filename,
+                "filePath": filePath,
                 "type":     certType,
         }
         

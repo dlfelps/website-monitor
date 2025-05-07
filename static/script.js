@@ -63,26 +63,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Set the path to the filename
                     pathInput.value = this.files[0].name;
                     
-                    // Optional: You could upload the file to the server here
-                    // and then update the path to where it was saved
+                    // Upload the file to the server and update the path
                     const formData = new FormData();
                     formData.append('file', this.files[0]);
+                    formData.append('type', prefix); // Send the certificate type
                     
-                    // Example upload code (commented out for now)
-                    /*
-                    fetch('/api/upload', {
+                    // Upload the file to the server
+                    fetch('/api/upload-certificate', {
                         method: 'POST',
                         body: formData
                     })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
+                        // Update the path to where the file was saved on the server
                         pathInput.value = data.filePath;
                     })
                     .catch(error => {
                         console.error('Error uploading file:', error);
-                        showError('Failed to upload file. Please try again.');
+                        showError('Failed to upload file: ' + error.message);
                     });
-                    */
                 }
             });
         }
