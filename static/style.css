@@ -57,12 +57,19 @@ label {
     font-weight: 500;
 }
 
-input {
+input[type="text"],
+input[type="url"] {
     width: 100%;
     padding: 10px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 16px;
+}
+
+input[type="checkbox"] {
+    width: auto;
+    margin-right: 5px;
+    vertical-align: middle;
 }
 
 button {
@@ -78,6 +85,20 @@ button {
 
 button:hover {
     background-color: #2980b9;
+}
+
+/* PKI form styles */
+.pki-toggle label {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.pki-options {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
 }
 
 /* Dashboard styles */

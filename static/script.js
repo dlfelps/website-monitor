@@ -3,6 +3,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const addWebsiteForm = document.getElementById('addWebsiteForm');
     const websiteUrl = document.getElementById('websiteUrl');
     const websiteName = document.getElementById('websiteName');
+    const usePKI = document.getElementById('usePKI');
+    const pkiOptionsDiv = document.querySelector('.pki-options');
+    const clientCertPath = document.getElementById('clientCertPath');
+    const clientKeyPath = document.getElementById('clientKeyPath');
+    const customRootCAPath = document.getElementById('customRootCAPath');
+    const skipTLSVerify = document.getElementById('skipTLSVerify');
     const changedWebsitesList = document.getElementById('changedWebsitesList');
     const unchangedWebsitesList = document.getElementById('unchangedWebsitesList');
     const checkAllBtn = document.getElementById('checkAllBtn');
@@ -17,6 +23,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listeners
     addWebsiteForm.addEventListener('submit', handleAddWebsite);
     checkAllBtn.addEventListener('click', handleCheckAll);
+    
+    // Show/hide PKI options based on checkbox
+    usePKI.addEventListener('change', function() {
+        if (this.checked) {
+            pkiOptionsDiv.style.display = 'block';
+        } else {
+            pkiOptionsDiv.style.display = 'none';
+        }
+    });
     
     // Functions
     async function loadWebsites() {
@@ -132,13 +147,35 @@ document.addEventListener('DOMContentLoaded', function() {
             name = url;
         }
         
+        // Prepare request data
+        const requestData = {
+            url,
+            name,
+            usePKI: usePKI.checked
+        };
+        
+        // Add PKI fields if PKI is enabled
+        if (usePKI.checked) {
+            requestData.clientCertPath = clientCertPath.value.trim();
+            requestData.clientKeyPath = clientKeyPath.value.trim();
+            requestData.customRootCAPath = customRootCAPath.value.trim();
+            requestData.skipTLSVerify = skipTLSVerify.checked;
+            
+            // Validate required certificate fields if they're provided
+            if ((requestData.clientCertPath && !requestData.clientKeyPath) || 
+                (!requestData.clientCertPath && requestData.clientKeyPath)) {
+                showError('Both client certificate and key must be provided together');
+                return;
+            }
+        }
+        
         try {
             const response = await fetch('/api/websites', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ url, name })
+                body: JSON.stringify(requestData)
             });
             
             if (!response.ok) {
@@ -147,6 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Reset form
             addWebsiteForm.reset();
+            pkiOptionsDiv.style.display = 'none';
             
             // Reload websites
             loadWebsites();

@@ -23,6 +23,31 @@
                     <label for="websiteName">Name (optional):</label>
                     <input type="text" id="websiteName" name="name" placeholder="My Website">
                 </div>
+                
+                <div class="form-group pki-toggle">
+                    <label for="usePKI">Use PKI Authentication:</label>
+                    <input type="checkbox" id="usePKI" name="usePKI">
+                </div>
+                
+                <div class="pki-options" style="display: none;">
+                    <div class="form-group">
+                        <label for="clientCertPath">Client Certificate Path:</label>
+                        <input type="text" id="clientCertPath" name="clientCertPath" placeholder="/path/to/certificate.pem">
+                    </div>
+                    <div class="form-group">
+                        <label for="clientKeyPath">Client Key Path:</label>
+                        <input type="text" id="clientKeyPath" name="clientKeyPath" placeholder="/path/to/key.pem">
+                    </div>
+                    <div class="form-group">
+                        <label for="customRootCAPath">Custom Root CA Path (optional):</label>
+                        <input type="text" id="customRootCAPath" name="customRootCAPath" placeholder="/path/to/ca.pem">
+                    </div>
+                    <div class="form-group">
+                        <label for="skipTLSVerify">Skip TLS Verification (insecure):</label>
+                        <input type="checkbox" id="skipTLSVerify" name="skipTLSVerify">
+                    </div>
+                </div>
+                
                 <button type="submit">Add Website</button>
             </form>
         </section>
