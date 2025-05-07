@@ -34,6 +34,9 @@ func (m *Monitor) AddWebsite(url, name string) *Website {
         m.mu.Lock()
         defer m.mu.Unlock()
 
+        // Create thumbnail URL using a screenshot service
+        thumbnailURL := "https://api.screenshotmachine.com/?key=screenshot&url=" + url + "&dimension=600x400&format=png&delay=1000"
+        
         website := &Website{
                 ID:             m.idCounter,
                 URL:            url,
@@ -44,6 +47,7 @@ func (m *Monitor) AddWebsite(url, name string) *Website {
                 IsFirstCheck:   true,
                 LastStatusCode: 0,
                 Error:          "",
+                ThumbnailURL:   thumbnailURL,
         }
 
         m.websites = append(m.websites, website)
